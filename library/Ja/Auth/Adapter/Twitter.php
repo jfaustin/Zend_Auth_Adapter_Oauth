@@ -1,0 +1,266 @@
+<?php
+/**
+ * Ja Zend Framework Auth Adapters
+ *
+ * LICENSE
+ *
+ * This source file is subject to the new BSD license that is bundled
+ * with this package in the file LICENSE.txt.
+ * It is also available through the world-wide-web at this URL:
+ * http://framework.zend.com/license/new-bsd
+ * If you did not receive a copy of the license and are unable to
+ * obtain it through the world-wide-web, please send an email
+ * to license@zend.com so we can send you a copy immediately.
+ *
+ * @category   Ja/Zend
+ * @package    Zend_Auth
+ * @subpackage Zend_Auth_Adapter
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
+ * @license    http://framework.zend.com/license/new-bsd     New BSD License
+ * @version    $Id: $
+ */
+
+/**
+ * @see Zend_Auth_Adapter_Interface
+ */
+require_once 'Zend/Auth/Adapter/Interface.php';
+
+/**
+ * @category   Ja/Zend
+ * @package    Zend_Auth
+ * @subpackage Zend_Auth_Adapter
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
+ * @license    http://framework.zend.com/license/new-bsd     New BSD License
+ */
+
+class Ja_Auth_Adapter_Twitter implements Zend_Auth_Adapter_Interface
+{
+    /**
+     * Consumer key, provided by Twitter.com
+     * 
+     * @var string
+     */
+    protected $_consumerKey = null;
+    
+    /**
+     * Consumer secret, provided by Twitter.com
+     * 
+     * @var string
+     */
+    protected $_consumerSecret = null;
+    
+    /**
+     * URL to redirect the user back from Twitter.com
+     * 
+     * @var string
+     */
+    protected $_callbackUrl = null;
+    
+    /**
+     * Array of options for this adapter.  Options include:
+     *   - sessionNamespace: session namespace override
+     *   
+     * @var array
+     */
+    protected $_options = null;
+    
+    /**
+     * Default namespace to store session credentials
+     * 
+     * @var string
+     */
+    const DEFAULT_SESSION_NAMESPACE = 'Ja_Auth_Adapter_Twitter';
+    
+    /**
+     * Constructor
+     * 
+     * @param array  $options An array of options for this adapter
+     * @param string $consumerKey Consumer key
+     * @param string $consumerSecret Consumer secret
+     * @param string $callbackUrl Callback URL
+     */
+    public function __construct(array $options = array(), 
+        $consumerKey = null, $consumerSecret = null, $callbackUrl = null)
+    {
+        $this->setOptions($options);
+        
+        if ($consumerKey !== null) {
+            $this->setConsumerKey($consumerKey);
+        }
+        
+        if ($consumerSecret !== null) {
+            $this->setConsumerSecret($consumerSecret);
+        }
+        
+        if ($callbackUrl !== null) {
+            $this->setCallbackUrl($callbackUrl);
+        } 
+    }
+    
+    /**
+     * Sets the consumer key for authentication
+     * 
+     * @param string $consumerKey
+     * @return Ja_Auth_Adapter_Twitter Fluent interface
+     */
+    public function setConsumerKey($consumerKey)
+    {
+        $this->_consumerKey = (string) $consumerKey;
+        return $this;
+    }
+    
+    /**
+     * Gets the consumer key
+     * 
+     * @return string|null
+     */
+    public function getConsumerKey()
+    {
+        return $this->_consumerKey;
+    }
+    
+    /**
+     * Sets the consumer secret for authentication
+     * 
+     * @param string $consumerSecret
+     * @return Ja_Auth_Adapter_Twitter Fluent interface
+     */
+    public function setConsumerSecret($consumerSecret)
+    {
+        $this->_consumerSecret = (string) $consumerSecret;
+        return $this;
+    }
+    
+    /**
+     * Gets the consumer secret
+     * 
+     * @return string|null
+     */
+    public function getConsumerSecret()
+    {
+        return $this->_consumerSecret;
+    }
+    
+    /**
+     * Sets the callback URL
+     * 
+     * @param string $callbackUrl
+     * @return Ja_Auth_Adapter_Twitter Fluent interface
+     */
+    public function setCallbackUrl($callbackUrl)
+    {
+        $this->_callbackUrl = (string) $callbackUrl;
+        return $this;
+    }
+    
+    /**
+     * Gets the callback URL
+     * 
+     * @return string|null
+     */
+    public function getCallbackUrl()
+    {
+        return $this->_callbackUrl;
+    }
+    
+    /**
+     * Returns the array of arrays of options of this adapter.
+     *
+     * @return array|null
+     */
+    public function getOptions()
+    {
+        return $this->_options;
+    }
+
+    /**
+     * Sets the array of arrays of options to be used by
+     * this adapter.
+     *
+     * @param  array $options The array of arrays of options
+     * @return Provides a fluent interface
+     */
+    public function setOptions($options)
+    {
+        $this->_options = is_array($options) ? $options : array();
+        return $this;
+    }
+    
+    /**
+     * Authenticate the user
+     * 
+     * @return Zend_Auth_Result
+     */
+    public function authenticate()
+    {
+        if (!$this->_consumerKey) {
+            $code = Zend_Auth_Result::FAILURE;
+            $message = array('A consumer key is required');
+            return new Zend_Auth_Result($code, '', $message);
+        }
+        
+        if (!$this->_consumerSecret) {
+            $code = Zend_Auth_Result::FAILURE;
+            $message = array('A consumer secret is required');
+            return new Zend_Auth_Result($code, '', $message);            
+        }
+        
+        if (!$this->_callbackUrl) {
+            $code = Zend_Auth_Result::FAILURE;
+            $message = array('A callback URL is required');
+            return new Zend_Auth_Result($code, '', $message);            
+        }
+        
+        $namespace = self::DEFAULT_SESSION_NAMESPACE;
+        
+        if (isset($this->_options['sessionNamespace']) && $this->_options['sessionNamespace'] != '') {
+            $namespace = $this->_options['sessionNamespace'];
+        }
+        
+        require_once 'Zend/Session/Namespace.php';
+        $session = new Zend_Session_Namespace($namespace);
+        
+        $oauthConfig = array(
+            'callbackUrl'     => $this->_callbackUrl,
+            'siteUrl'         => 'http://twitter.com/oauth',
+            'consumerKey'     => $this->_consumerKey,
+            'consumerSecret'  => $this->_consumerSecret,
+        );
+        
+        require_once 'Zend/Oauth/Consumer.php';
+        $consumer = new Zend_Oauth_Consumer($oauthConfig);
+        
+        
+        try {
+            if (!isset($_GET['oauth_token']) && !$session->requestToken) {
+                
+                $token = $consumer->getRequestToken();
+        
+                $session->requestToken = serialize($token);
+                
+                $consumer->redirect();
+                
+            } else {
+                $accessToken = $consumer->getAccessToken($_GET, unserialize($session->requestToken));
+
+                unset($session->requestToken);
+                
+                $userId = $accessToken->getParam('user_id');
+            }
+        } catch (Exception $e) {
+            $session->unsetAll();
+            
+            $code = Zend_Auth_Result::FAILURE;
+            $message = array($e->getMessage());
+            return new Zend_Auth_Result($code, '', $message);  
+        }
+        
+        if (!isset($userId) || $userId == '') {
+            $code = Zend_Auth_Result::FAILURE;
+            $message = array('Authentication Failed');
+            return new Zend_Auth_Result($code, '', $message);  
+        }        
+        
+        return new Zend_Auth_Result(Zend_Auth_Result::SUCCESS, $userId, array());        
+    }
+}
