@@ -1,0 +1,22 @@
+This code corresponds to the proposal for the Zend_Auth_Adapter_Twitter 
+component.
+
+http://framework.zend.com/wiki/display/ZFPROP/Zend_Auth_Adapter_Twitter+-+Jason+Austin
+
+The example code was created using Zend Framework 1.11.  Download this yourself 
+and put the Zend/ folder in the library folder.
+
+Also, you will need to rename /example/config.example.php to /example/config.php.
+
+You will need to register your application with Twitter.com.  To do so, go to
+http://twitter.com/apps/ and "Register a new Application".  You will get a 
+consumer key and secret, which you will need to put into the config.php file
+you just created.  Also, you will need to provide a callback URL.  For this 
+example, it is http://{whatever your URL is}/example/auth.php.
+
+For questions, contact Jason Austin at jfaustin at gmail dot com. 
+
+Jason Austin
+@jason_austin
+http://jasonawesome.com
+ 
