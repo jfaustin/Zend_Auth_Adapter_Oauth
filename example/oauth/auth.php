@@ -1,16 +1,22 @@
 <?php
-set_include_path(realpath(dirname(__FILE__) . '/../library'));
+set_include_path(realpath(dirname(__FILE__) . '/../../library'));
 
 require_once 'Zend/Config.php';
 $config = new Zend_Config(require_once 'config.php');
 
 require_once 'Zend/Auth.php';
-require_once 'Ja/Auth/Adapter/Twitter.php';
+require_once 'Ja/Auth/Adapter/Oauth.php';
+require_once 'Zend/Oauth/Consumer.php';
 
-$adapter = new Ja_Auth_Adapter_Twitter();
-$adapter->setConsumerKey($config->consumerKey)
-        ->setConsumerSecret($config->consumerSecret)
-        ->setCallbackUrl($config->callbackUrl);
+$options = $config->toArray();
+$consumer = new Zend_Oauth_Consumer($options);
+
+$adapter = new Ja_Auth_Adapter_Oauth();
+$adapter->setConsumer($consumer);
+
+if (isset($_GET['oauth_token'])) {
+    $adapter->setQueryData($_GET);
+}
 
 $auth = Zend_Auth::getInstance();
 

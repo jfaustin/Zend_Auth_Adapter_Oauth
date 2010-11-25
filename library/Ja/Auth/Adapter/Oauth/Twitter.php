@@ -23,7 +23,7 @@
 /**
  * @see Zend_Auth_Adapter_Interface
  */
-require_once 'Zend/Auth/Adapter/Interface.php';
+require_once 'Ja/Auth/Adapter/Oauth.php';
 
 /**
  * @category   Ja/Zend
@@ -33,7 +33,7 @@ require_once 'Zend/Auth/Adapter/Interface.php';
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 
-class Ja_Auth_Adapter_Twitter implements Zend_Auth_Adapter_Interface
+class Ja_Auth_Adapter_Oauth_Twitter extends Ja_Auth_Adapter_Oauth
 {
     /**
      * Consumer key, provided by Twitter.com
@@ -63,13 +63,6 @@ class Ja_Auth_Adapter_Twitter implements Zend_Auth_Adapter_Interface
      * @var array
      */
     protected $_options = null;
-    
-    /**
-     * Default namespace to store session credentials
-     * 
-     * @var string
-     */
-    const DEFAULT_SESSION_NAMESPACE = 'Ja_Auth_Adapter_Twitter';
     
     /**
      * Constructor
@@ -164,29 +157,6 @@ class Ja_Auth_Adapter_Twitter implements Zend_Auth_Adapter_Interface
     }
     
     /**
-     * Returns the array of arrays of options of this adapter.
-     *
-     * @return array|null
-     */
-    public function getOptions()
-    {
-        return $this->_options;
-    }
-
-    /**
-     * Sets the array of arrays of options to be used by
-     * this adapter.
-     *
-     * @param  array $options The array of arrays of options
-     * @return Provides a fluent interface
-     */
-    public function setOptions($options)
-    {
-        $this->_options = is_array($options) ? $options : array();
-        return $this;
-    }
-    
-    /**
      * Authenticate the user
      * 
      * @return Zend_Auth_Result
@@ -211,15 +181,6 @@ class Ja_Auth_Adapter_Twitter implements Zend_Auth_Adapter_Interface
             return new Zend_Auth_Result($code, '', $message);            
         }
         
-        $namespace = self::DEFAULT_SESSION_NAMESPACE;
-        
-        if (isset($this->_options['sessionNamespace']) && $this->_options['sessionNamespace'] != '') {
-            $namespace = $this->_options['sessionNamespace'];
-        }
-        
-        require_once 'Zend/Session/Namespace.php';
-        $session = new Zend_Session_Namespace($namespace);
-        
         $oauthConfig = array(
             'callbackUrl'     => $this->_callbackUrl,
             'siteUrl'         => 'http://twitter.com/oauth',
@@ -230,37 +191,8 @@ class Ja_Auth_Adapter_Twitter implements Zend_Auth_Adapter_Interface
         require_once 'Zend/Oauth/Consumer.php';
         $consumer = new Zend_Oauth_Consumer($oauthConfig);
         
+        $this->setConsumer($consumer);
         
-        try {
-            if (!isset($_GET['oauth_token']) && !$session->requestToken) {
-                
-                $token = $consumer->getRequestToken();
-        
-                $session->requestToken = serialize($token);
-                
-                $consumer->redirect();
-                
-            } else {
-                $accessToken = $consumer->getAccessToken($_GET, unserialize($session->requestToken));
-
-                unset($session->requestToken);
-                
-                $userId = $accessToken->getParam('user_id');
-            }
-        } catch (Exception $e) {
-            $session->unsetAll();
-            
-            $code = Zend_Auth_Result::FAILURE;
-            $message = array($e->getMessage());
-            return new Zend_Auth_Result($code, '', $message);  
-        }
-        
-        if (!isset($userId) || $userId == '') {
-            $code = Zend_Auth_Result::FAILURE;
-            $message = array('Authentication Failed');
-            return new Zend_Auth_Result($code, '', $message);  
-        }        
-        
-        return new Zend_Auth_Result(Zend_Auth_Result::SUCCESS, $userId, array());        
+        return parent::authenticate();
     }
 }
