@@ -1,9 +1,14 @@
+This is example code showing the theoretical implementation of an OAuth authentication
+adapter for Zend Framework.  There are 2 separate implementations of this adapter.
+
+The first is for ZF 1.x releases.  The other is for the impending ZF 2.0 release.
+
 This code corresponds to the proposal for the Zend_Auth_Adapter_Twitter 
 component.
 
 http://framework.zend.com/wiki/display/ZFPROP/Zend_Auth_Adapter_Twitter+-+Jason+Austin
 
-The example code was created using Zend Framework 1.11.  Download this yourself 
+The example code for ZF1 was created using Zend Framework 1.11.  Download this yourself 
 and put the Zend/ folder in the library folder.
 
 Also, you will need to rename /example/config.example.php to /example/config.php.
@@ -12,7 +17,7 @@ You will need to register your application with Twitter.com.  To do so, go to
 http://twitter.com/apps/ and "Register a new Application".  You will get a 
 consumer key and secret, which you will need to put into the config.php file
 you just created.  Also, you will need to provide a callback URL.  For this 
-example, it is http://{whatever your URL is}/example/auth.php.
+example, it is http://{whatever your URL is}/zf[1 or 2]/example/auth.php.
 
 For questions, contact Jason Austin at jfaustin at gmail dot com. 
 
